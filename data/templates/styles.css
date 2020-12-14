@@ -1,0 +1,30 @@
+body {
+    background-color: #36393F;
+    padding: 12px 0px 12px 0px;
+    margin: 0px 0px 0px 0px;
+}
+
+p {
+    color: rgb(220, 221, 222);
+    font-weight: 400;
+    margin: 5px 0px 0px 0px;
+    font-size: 1.25em;
+}
+h2 {
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0px 0px 0px 0px;
+    font-size: 1.25em;
+}
+
+.block {
+    margin-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 40px
+}
+
+.break {
+    border-style: none none solid none;
+    border-color: rgb(66,69,74);
+}
