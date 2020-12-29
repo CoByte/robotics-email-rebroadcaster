@@ -1,3 +1,7 @@
+import pathlib
+import sys
+sys.path.append(pathlib.Path().absolute())
+
 import discord.broadcaster as bot
 from src.email import emailmanager as emm
 
