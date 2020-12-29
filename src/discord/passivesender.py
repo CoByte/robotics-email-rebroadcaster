@@ -22,6 +22,8 @@ class Chain:
             self.countdown = None
 
             msgs = [self.startMessage] + await self.startMessage.channel.history(after=self.startMessage).flatten()
+            txtContent = [self.emailer.create_raw_message(msg) for msg in msgs]
+            self.emailer.send_email(txtContent, self.startMessage.guild.id)
 
         self.countdown = asyncio.create_task(count())
 
@@ -33,7 +35,7 @@ class Chain:
 
 class PassiveSender(Cog):
 
-    countdownTime = 5
+    countdownTime = 5  # make 5 minutes when out of production
 
     def __init__(self, bot: Bot, emailer: emm.EmailManager):
         self.bot = bot
@@ -41,7 +43,7 @@ class PassiveSender(Cog):
 
         self.chains: dict = {}
 
-    @command()
+    @command(hidden=True)
     async def scream(self, ctx):
         await ctx.send("***oh my lord why is this so hard?***")
 
@@ -51,12 +53,14 @@ class PassiveSender(Cog):
 
     @Cog.listener("on_message")
     async def on_message(self, msg: Message):
-        for config in env.guildSettings:
-            if config["guild-id"] == msg.guild.id and msg.channel.id in config["passive-channels"]:
-                chainKey = str(msg.guild.id)
-                if chainKey not in self.chains or not self.chains[chainKey].alive:
-                    chain = Chain(msg, self.emailer)
-                    chain.start_countdown()
-                    self.chains[chainKey] = chain
-                else:
-                    self.chains[chainKey].reset_countdown()
+        if env.is_passive_channel(
+            str(msg.guild.id),
+            msg.channel.id
+        ):
+            chainKey = str(msg.guild.id)
+            if chainKey not in self.chains or not self.chains[chainKey].alive:
+                chain = Chain(msg, self.emailer)
+                chain.start_countdown()
+                self.chains[chainKey] = chain
+            else:
+                self.chains[chainKey].reset_countdown()

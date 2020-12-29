@@ -1,57 +1,48 @@
 import yagmail
 import re
 from discord import *
-from bs4 import BeautifulSoup, NavigableString
+from bs4 import BeautifulSoup
+from globalenvironment import globalEnvironment as env
+import random
 
 
 """
 raw messages are dicts, structured as follows:
 {
-author: "<name>",
-author-color: "<color>",
-text-content: "<content>"
+author: "name",
+author-color: "color",
+text-content: "content",
+message-link: "link"
 }
 """
 
 
+htmlFooter = r"""This was an automatically generated message to keep you updated on the Summit High School robotics team discord server.
+A direct link to this chat can be found here: {}.
+If you believe you've received this message in error, if you have any questions on this program, or you've encountered a bug, please don't hesitate to contact the developer at owen356wh@gmail.com, and I'll do my best to help you as soon as possible."""
+
+
 class EmailManager:
 
-    def __init__(self, address, creds="oauth2_creds.json"):
-        self.address = address
-        self.creds = creds
+    def __init__(self, address, creds="../data/credentials/oauth2_creds.json"):
+        self.yag = yagmail.SMTP(address, oauth2_file=creds)
 
     @staticmethod
     def create_raw_message(msg: Message):
-        member = msg.author
-        for user in msg.guild.members:
-            if msg.author == user:
-                break
-
+        author = msg.author.display_name
         txtContent = msg.clean_content
-
-        if isinstance(member, User):
-            author = msg.author.name
-        elif member.nick is None:
-            author = msg.author.name
-        else:
-            author = member.nick
 
         return {
             "author": author,
-            "color": msg.author.color,
-            "text-content": txtContent
+            "author-color": msg.author.color,
+            "text-content": txtContent,
+            "message-link": msg.jump_url
         }
 
     @staticmethod
     def parse_message_text(rawText):
-        text = rawText.replace("<", "&lt").replace(">", "&gt")
-        text = re.sub(
-            r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s("
-            r")<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))",
-            lambda m: f"<a href={m.group(0)}>{m.group(0)}</a>", text
-        )
-
-        return text
+        parsedText = re.split(r"(https?:\/\/\S{2,})", rawText)
+        return parsedText
 
     @staticmethod
     def parse_messages(messages):
@@ -59,76 +50,54 @@ class EmailManager:
         for message in messages:
 
             textContent = message['text-content']
-            textContent = EmailManager.parse_message_text(textContent)
+            textContent = textContent.split("\n")
 
             if len(parsedMessages) > 0:
                 if message['author'] == parsedMessages[-1]['author']:
-                    parsedMessages[-1]['text-content'].append(textContent)
+                    parsedMessages[-1]['text-content'].extend(textContent)
                     continue
 
-            message['text-content'] = [textContent]
+            message['text-content'] = textContent
             parsedMessages.append(message)
 
         return parsedMessages
 
     @staticmethod
     def generate_email_html(parsedMessages):
-        with open("../../data/templates/template.html", "r") as template:
-            txt = template.read()
-            soup = BeautifulSoup(txt)
+        try:
+            soup = BeautifulSoup()
 
-        with open("../../data/templates/styles.css", "r") as stylesheet:
-            styles = stylesheet.read()
+            for block in parsedMessages:
+                color = block["author-color"]
+                speaker = soup.new_tag(
+                    "b", style=f"color: rgb({color.r},{color.g},{color.b}); font-size: 1.25em;")
+                speaker.string = block["author"]
+                soup.append(speaker)
 
-        soup.head.append(styles)
+                rawContent = "\n".join(block["text-content"])
 
-        for block in parsedMessages:
-            blockDiv = soup.new_tag("div", attrs={"class": "speaker"})
+                content = soup.new_tag("div", style="color: black; font-size: 1.25em;")
+                content.append(rawContent)
+                soup.append(content)
 
-            color = block["author-color"]
-            speaker = soup.new_tag(
-                "h2", style=f"color: rgb({color.r},{color.g},{color.b})")
-            speaker.string = block["author"]
-            blockDiv.append(speaker)
+                soup.append(soup.new_tag("hr"))
 
-            for msgText in block["message-text"]:
-                content = soup.new_tag("p")
-                content.string = msgText
-                blockDiv.append(content)
+            footer = soup.new_tag("div", style="color: black; font-size: 1em;")
+            footerText = "".join(map(lambda i: i + "\u200c" if random.randint(0, 1) and i != "{" else i, htmlFooter))
+            footerText = footerText.format(parsedMessages[0]["message-link"])
+            footer.append(footerText)
+            soup.append(footer)
 
-            soup.body.append(blockDiv)
-            soup.body.append(soup.new_tag("div", attrs={"class": "break"}))
+            return str(soup)
+        except Exception as e:
+            print(e)
 
-        print(soup)
-
-        return soup
-
-    def send_email(self, messages):
+    def send_email(self, messages, targetGuild, subject="AUTOMATED MESSAGE DO NOT REPLY"):
         messages = self.parse_messages(messages)
         emailContent = self.generate_email_html(messages)
 
-# test = EmailManager()
-# genTest = test.parse_messages([
-#     {
-#         "author": "Jake",
-#         "author-color": "e",
-#         "text-content": "eat that pant gamers http://eat-my-pants/thisisfine.com"
-#     },
-#     {
-#         "author": "Jake",
-#         "author-color": "e",
-#         "text-content": "<p>hackerman</p>"
-#     },
-#     {
-#         "author": "Janette",
-#         "author-color": "e",
-#         "text-content": "excuse me"
-#     },
-#     {
-#         "author": "Jake",
-#         "author-color": "e",
-#         "text-content": "you heard me"
-#     }
-# ])
-#
-# print(genTest)
+        self.yag.send(
+            to=list(env.get_email_list(str(targetGuild))),
+            subject=subject,
+            contents=emailContent
+        )
