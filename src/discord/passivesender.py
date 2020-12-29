@@ -23,7 +23,8 @@ class Chain:
 
             msgs = [self.startMessage] + await self.startMessage.channel.history(after=self.startMessage).flatten()
             txtContent = [self.emailer.create_raw_message(msg) for msg in msgs]
-            self.emailer.send_email(txtContent, self.startMessage.guild.id)
+            self.emailer.send_email(txtContent, self.startMessage.guild.id,
+                                    subject="DO NOT REPLY - passive broadcast from " + self.startMessage.channel.name)
 
         self.countdown = asyncio.create_task(count())
 

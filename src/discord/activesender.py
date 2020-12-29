@@ -95,7 +95,7 @@ class CommandSender(Cog):
 
         await self.broadcast_confirm(ctx, ctx, txtContent=[txtContent])
 
-    async def broadcast_confirm(self, ctx, *msgs, txtContent=None):
+    async def broadcast_confirm(self, ctx: Context, *msgs, txtContent=None):
         if txtContent is None:
             txtContent = [self.emailer.create_raw_message(msg) for msg in msgs]
         payload = self.process_payload(txtContent)
@@ -103,7 +103,7 @@ class CommandSender(Cog):
         self.confirmers.append(await Confirmer(
             ctx, payload,
             "Message has been broadcast!",
-            lambda: self.emailer.send_email(txtContent, ctx.guild.id),
+            lambda: self.emailer.send_email(txtContent, ctx.guild.id, subject="DO NOT REPLY - broadcast from " + ctx.author.display_name),
             "Message has been cancelled, terminating..."
         ).start())
 
