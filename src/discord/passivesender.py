@@ -36,7 +36,7 @@ class Chain:
 
 class PassiveSender(Cog):
 
-    countdownTime = 5  # make 5 minutes when out of production
+    countdownTime = 5 * 60  # make 5 minutes when out of production
 
     def __init__(self, bot: Bot, emailer: emm.EmailManager):
         self.bot = bot
