@@ -2,7 +2,7 @@ import yagmail
 import re
 from discord import *
 from bs4 import BeautifulSoup
-from globalenvironment import globalEnvironment as env
+from src.globalenvironment import globalEnvironment as env
 import random
 
 
@@ -24,7 +24,7 @@ If you believe you've received this message in error, if you have any questions 
 
 class EmailManager:
 
-    def __init__(self, address, creds="../data/credentials/oauth2_creds.json"):
+    def __init__(self, address, creds="data/credentials/oauth2_creds.json"):
         self.yag = yagmail.SMTP(address, oauth2_file=creds)
 
     @staticmethod

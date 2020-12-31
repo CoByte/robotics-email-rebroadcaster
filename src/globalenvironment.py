@@ -7,7 +7,7 @@ import os
 
 class GlobalEnvironment(object):
 
-    guildSettingsPath = "../data/userdata/guildsettings.pkl"
+    guildSettingsPath = "data/userdata/guildsettings.pkl"
 
     def __init__(self):
         if os.stat(self.guildSettingsPath).st_size == 0:

@@ -1,5 +1,5 @@
 from discord.ext.commands import *
-from globalenvironment import globalEnvironment as env
+from src.globalenvironment import globalEnvironment as env
 
 
 def is_not_passive_channel():

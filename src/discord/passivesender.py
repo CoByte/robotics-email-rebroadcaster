@@ -1,6 +1,6 @@
 from discord.ext.commands import *
 from discord import *
-from globalenvironment import globalEnvironment as env
+from src.globalenvironment import globalEnvironment as env
 import asyncio
 from src.email import emailmanager as emm
 
